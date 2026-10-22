@@ -1,9 +1,4 @@
-# File Management in Linux: Cheat Sheet
-
-> Summary of the GeeksforGeeks article *"File Management in Linux"* (last updated 1 Jun 2026).
-> Source: https://www.geeksforgeeks.org/linux-unix/file-management-in-linux/
-
----
+#
 
 ## 1. Summary
 
