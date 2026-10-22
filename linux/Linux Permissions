@@ -1,0 +1,133 @@
+
+## 1. Summary
+
+Linux file permissions are the foundation of the system's **security model**. They define **who can read, write or execute** files and directories. Permissions are shown as nine characters (`rwx rwx rwx`) for three classes of users, and are changed with `chmod` (symbolic or octal notation). Special permissions (`setuid`, `setgid`, sticky bit) give finer control.
+
+---
+
+## 2. The three basic permissions
+
+| Symbol | Permission | Meaning |
+|--------|-----------|---------|
+| `r` | Read | View the content of a file |
+| `w` | Write | Modify the content of a file |
+| `x` | Execute | Run a file / access a directory |
+
+## 3. Ownership classes
+
+```
+---     ---     ---
+rwx     rwx     rwx
+user    group   other
+```
+
+| Ref | Class | Description |
+|-----|-------|-------------|
+| `u` | user | The owner of the file or directory only |
+| `g` | group | Only the group assigned to the file or directory |
+| `o` | others | All other users on the system (the one to watch most) |
+| `a` | all | Owner, group and others together |
+
+## 4. Operators
+
+| Operator | Definition |
+|----------|------------|
+| `+` | Add permissions |
+| `-` | Remove permissions |
+| `=` | Set permissions to exactly the given values |
+
+---
+
+## 5. Checking permissions
+
+| Command | Definition | Example |
+|---------|------------|---------|
+| `ls -l` | Long listing with permissions, owner, group, size, date. | `ls -l NarX.txt` |
+| `namei -l` | Checks permissions through each component of a file path. | `namei -l /path/to/your/file` |
+| `stat` | Shows detailed file metadata (size, inode, access/modify/change times). | `stat example.txt` |
+
+### Reading `ls -l` output
+
+```
+-rw-r--r-- 1 user group 46 Apr 14 16:37 NarX.txt
+```
+
+| Part | Meaning |
+|------|---------|
+| `-` (first character) | File type: `-` = file, `d` = directory |
+| `rw-r--r--` | The nine permission characters |
+| `user` | Owner of the file |
+| `group` | Group owner |
+| `46` | Size in bytes |
+| `Apr 14 16:37` | Last modification date and time |
+
+### Reading `rw-  r-x  r--`
+
+- `rw-`: owner can read and write (not execute)
+- `r-x`: group can read and execute
+- `r--`: everyone else can only read
+
+---
+
+## 6. Changing permissions with `chmod` (change mode)
+
+### Symbolic notation
+
+| Command | Effect |
+|---------|--------|
+| `chmod o+x xyz.txt` | Adds execute for others |
+| `chmod ugo-rwx xyz.txt` | Removes all permissions from user, group and others |
+| `chmod ug+rw,o-x abc.mp4` | Adds read and write to user and group, removes execute from others |
+| `chmod ug=rx,o+r abc.c` | Sets read and execute for user and group, adds read for others |
+
+### Octal notation
+
+Each digit is the sum of its permissions: **r = 4, w = 2, x = 1**. Three digits are used: user, group, others.
+
+| Number | Permission | Symbol |
+|--------|-----------|--------|
+| 0 | none | `---` |
+| 1 | execute | `--x` |
+| 2 | write | `-w-` |
+| 3 | write + execute | `-wx` |
+| 4 | read | `r--` |
+| 5 | read + execute | `r-x` |
+| 6 | read + write | `rw-` |
+| 7 | read + write + execute | `rwx` |
+
+Example: `chmod 755 file.txt` gives `rwxr-xr-x` (owner: all; group and others: read and execute).
+
+---
+
+## 7. Special permissions
+
+| Permission | Command | Definition |
+|------------|---------|------------|
+| **setuid** | `chmod u+s program` | Runs the program with the privileges of its owner. |
+| **setgid** | `chmod g+s directoryname` | Runs files with the file's group permissions; new files in a directory inherit the directory's group. |
+| **sticky bit** | `chmod +t directoryname` | Only the owner can delete or rename files in the directory, whatever the other permissions. |
+
+---
+
+## 8. Setting permissions for a specific user or group
+
+| Command | Definition |
+|---------|------------|
+| `chown user:group file.txt` | Changes the owner and group of a file. |
+| `chmod 755 file.txt` | Changes the permissions of a file. |
+
+---
+
+## 9. Quick examples
+
+```bash
+ls -l file.txt              # check permissions
+chmod o+x file.txt          # add execute for others
+chmod ugo-rwx file.txt      # remove everything
+chmod ug=rx,o+r file.txt    # set exact values
+chmod 755 file.txt          # octal
+chmod u+s program           # setuid
+chmod g+s mydir             # setgid
+chmod +t mydir              # sticky bit
+chown user:group file.txt   # change owner and group
+```
