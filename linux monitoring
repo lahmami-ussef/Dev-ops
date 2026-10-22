@@ -1,0 +1,121 @@
+
+
+## 1. Summary
+
+Monitoring a Linux system means checking how well its hardware and software work. It helps you **track performance, find resource-heavy processes and detect issues early**. It involves knowing your CPU, memory, disks and processes, watching them in real time, and understanding the hardware configuration and operating environment.
+
+---
+
+## 2. Checking system information
+
+| Command | Definition | Details |
+|---------|------------|---------|
+| `hostnamectl` | Shows system identity in a tidy block. | Hostname, machine ID, chassis, OS, kernel, virtualization. Confirms the distro and whether you are in a VM or container. |
+| `lscpu` | Lists CPU information. | Model name, sockets, cores, threads per core, flags (SSE/AVX). Useful to estimate parallel capacity. |
+| `lsblk` | Lists block devices as a tree. | Disks, partitions, LVM layers, sizes, mount points. Options: `--fs`, `-o NAME,SIZE,TYPE,MOUNTPOINT`. |
+| `free -h` | Shows RAM and swap usage in human-readable units. | Total, used, free and available memory. |
+| `df -h` | Shows disk space used and available per mounted filesystem. | Check `Use%` for nearly full volumes; add `-T` for filesystem types. |
+
+---
+
+## 3. Real-time performance monitoring
+
+| Command | Definition | Details |
+|---------|------------|---------|
+| `top` | Live process viewer. | CPU/memory per process and load averages. Sort with Shift+P (CPU) or Shift+M (memory). |
+| `htop` | Colorful, interactive version of `top`. | Scrolling, tree view, easy sort/filter, per-core usage, quick process kill. May need installation. |
+| `iostat -xz 1` | Shows how busy your disks are. | `-x` extended stats, `-z` hides idle devices, `1` refreshes every second. High `%util` or `avgqu-sz` with rising `await` means overloaded disks. |
+| `iftop` | Real-time network usage per connection. | Shows who sends/receives the most data; helps find noisy hosts. |
+
+---
+
+## 4. Hardware and devices
+
+| Command | Definition | Details |
+|---------|------------|---------|
+| `lspci` | Lists PCI devices (graphics cards, network adapters...). | Confirms hardware detected by the kernel; useful for driver troubleshooting. |
+| `lsusb` | Lists connected USB devices. | Vendor/product IDs; check recognition before looking at `dmesg` or drivers. |
+| `sudo dmidecode -t system` | Shows manufacturer, model, serial, BIOS/UEFI version. | Reads DMI/SMBIOS data. Other types: `-t bios`, `-t memory`. |
+
+---
+
+## 5. Logs and system events
+
+| Command | Definition | Details |
+|---------|------------|---------|
+| `journalctl -xe` | Shows recent system errors and warnings. | Extra context on errors and critical events; a good first stop after a failure. |
+| `journalctl -u servicename` | Shows logs of one service. | Add `--since` / `--until` for time ranges, `-f` to follow live. |
+| `dmesg -T` | Shows kernel messages with readable timestamps. | Hardware detection, driver issues, crash traces. |
+
+---
+
+## 6. Services and startup
+
+| Command | Definition | Details |
+|---------|------------|---------|
+| `systemctl status service-name` | Shows if a service is running. | Status, last logs, main PID, recent failures. |
+| `systemctl enable --now service-name` | Enables a service at boot and starts it now. | Use after installation or configuration. |
+| `systemctl --failed` | Lists services that failed to start. | A good starting point to triage after boot. |
+
+---
+
+## 7. Troubleshooting scenarios
+
+| Problem | Command |
+|---------|---------|
+| High CPU usage | `top` or `htop` |
+| Low available memory | `free -h` |
+| Disk almost full | `df -h` |
+| Find large disks/partitions | `lsblk` |
+| Service not starting | `systemctl status service-name` |
+| Check service logs | `journalctl -u service-name` |
+| View kernel errors | `dmesg -T` |
+| Check failed services | `systemctl --failed` |
+
+---
+
+## 8. Basic security and user checks
+
+| Command | Definition | Details |
+|---------|------------|---------|
+| `id` | Shows the current user ID and groups. | UID, primary and supplementary groups; verify membership in `sudo` or `docker`. |
+| `sudo -l` | Lists commands the user can run with sudo. | Based on sudoers; useful for least-privilege audits. |
+| `last -n 10` | Shows the last 10 logins. | Usernames, times, sources; helps spot suspicious logins. |
+
+---
+
+## 9. Simple system health script
+
+Create `health.sh` and run it with `bash health.sh`:
+
+```bash
+#!/usr/bin/env bash
+echo "== SYSTEM =="
+hostnamectl | egrep 'Operating System|Kernel|Architecture'
+
+echo; echo "== CPU =="
+lscpu | egrep 'Model name|CPU|Thread|Core|MHz'
+
+echo; echo "== MEMORY =="
+free -h
+
+echo; echo "== DISK USAGE =="
+df -hT | awk 'NR==1 || $7 ~ /^\/(home|var|root|\/|boot|data)/'
+
+echo; echo "== NETWORK PORTS =="
+ss -tuln | head -n 10
+
+echo; echo "== LOAD AVERAGE (1/5/15) =="
+awk '{print $1,$2,$3}' /proc/loadavg
+
+echo; echo "== TOP PROCESSES =="
+ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 10
+```
+
+It summarizes system health for a quick check before troubleshooting or deployment.
+
+---
+
+## 10. Note
+
+Some commands may not run in every environment (sandboxed terminals, managed lab VMs, limited user privileges) because of permission or security restrictions.
